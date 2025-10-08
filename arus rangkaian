@@ -1,0 +1,50 @@
+1 Lcd 16X2 
+Pin yang digunakan 
+VSS-GND 
+VDD-5V 
+V0-Potensiometer 
+RS-Pin digital 12 
+Enable-Pin digital11 
+D4-Pin digital5 
+D5-Pin digital4 
+D6-Pin digital3 
+D7-Pin digital2 
+A-5v 
+K-GND 
+
+2 Sensor ultrasonic 
+pin yang digunakan
+VCC-5V 
+GND-GND 
+TRIG-Pin digital9 
+Echo-Pin digital8
+
+3 Sensor infrared VCC-5V 
+GND-GND 
+Out-Pin digital7 
+
+4 Motor servo VCC-5V 
+GND-GND 
+Signal-pin digital10 
+
+5 Pushbutton1(mode manual) Satu kaki-pin digital6 
+Kaki lainnya-GND 
+Pull up internal diaktifkan 
+dalam kode 
+
+6 Pushbutton2(matikan sensor) Satu kaki-Pin analog3 
+Kaki lainnya-GND 
+Pull up internal diaktifkan 
+dalam kode 
+
+7 LED Hijau Anoda-Pin analog A0 
+ Katoda-resistor-GND
+
+8 LED Merah Anoda-Pin analog A1 
+ Katoda-resistor-GND 
+
+9 LED Biru Anoda-Pin analog A4 
+ Katoda-resistor-GND
+
+10 Buzzer Positif-Pin analog2 
+ Negatif-GND
