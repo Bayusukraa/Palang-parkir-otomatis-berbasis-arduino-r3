@@ -1,0 +1,183 @@
+#include <LiquidCrystal.h> 
+#include <Servo.h> 
+ 
+LiquidCrystal lcd (12, 11, 5, 4, 3, 2); 
+ 
+ 
+Servo servoMotor; 
+ 
+ 
+const int trigPin = 9;         
+const int echoPin = 8;         
+const int irSensorPin = 7;    
+const int pushButton = 6;      
+const int sensorToggleBtn = A3;  
+const int servoPin = 10;       
+const int ledGreen = A0;       
+const int ledRed = A1;         
+const int buzzer = A2;         
+const int sensorLED = A4;      
+ 
+long duration; 
+int distance; 
+bool gateOpen = false; 
+bool manualMode = false; 
+bool sensorsEnabled = true;    
+int vehicleCount = 0; 
+unsigned long lastDetectionTime = 0; 
+unsigned long lastSensorToggleTime = 0; 
+const unsigned long gateCloseDelay = 3000;  
+const unsigned long buttonDebounceDelay = 300;
+
+void setup() { 
+   
+  Serial.begin(9600); 
+   
+  lcd.begin(16, 2); 
+  lcd.print(" SELAMAT DATANG "); 
+  lcd.setCursor(0, 1); 
+  delay(2000); 
+   
+  pinMode(trigPin, OUTPUT); 
+  pinMode(echoPin, INPUT); 
+  pinMode(irSensorPin, INPUT); 
+  pinMode(pushButton, INPUT_PULLUP); 
+  pinMode(sensorToggleBtn, INPUT_PULLUP); 
+  pinMode(ledGreen, OUTPUT); 
+  pinMode(ledRed, OUTPUT); 
+  pinMode(buzzer, OUTPUT); 
+  pinMode(sensorLED, OUTPUT); 
+   
+   
+  servoMotor.attach(servoPin); 
+  servoMotor.write(0);  
+   
+  digitalWrite(ledRed, HIGH);    
+  digitalWrite(ledGreen, LOW);   
+  digitalWrite(sensorLED, HIGH); 
+   
+  updateLCD(); 
+   
+} 
+ 
+void loop() { 
+ 
+  if (sensorsEnabled) { 
+ distance = readUltrasonicSensor(); 
+  } else { 
+    distance = 999;  
+  } 
+   
+  
+  bool irDetected = false; 
+  if (sensorsEnabled) { 
+    irDetected = !digitalRead(irSensorPin); 
+  } 
+   
+   
+  bool buttonPressed = !digitalRead(pushButton); 
+   
+  
+  bool sensorTogglePressed = !digitalRead(sensorToggleBtn); 
+   
+  if (sensorTogglePressed && (millis() - lastSensorToggleTime > 
+buttonDebounceDelay)) { 
+    toggleSensors(); 
+    lastSensorToggleTime = millis(); 
+  } 
+   
+  
+  if (buttonPressed) { 
+    delay(200);  
+    manualMode = !manualMode; 
+     
+    if (manualMode) { 
+      lcd.clear(); 
+      lcd.print("MODE MANUAL"); 
+      lcd.setCursor(0, 1); 
+      lcd.print("Tekan untuk buka"); 
+      delay(1000);
+       } 
+     
+    if (manualMode && gateOpen) { 
+      closeGate(); 
+    } else if (manualMode && !gateOpen) { 
+      openGate(); 
+    } 
+     
+    if (!manualMode) { 
+      updateLCD(); 
+    } 
+  } 
+   
+  // Mode otomatis (hanya jika sensor aktif) 
+  if (!manualMode && sensorsEnabled) { 
+     
+    if ((distance > 0 && distance < 20) || irDetected) { 
+      if (!gateOpen) { 
+        vehicleDetected(); 
+        openGate(); 
+        vehicleCount++; 
+      } 
+      lastDetectionTime = millis(); 
+    } 
+     
+    // Tutup palang otomatis setelah delay 
+    if (gateOpen && (millis() - lastDetectionTime > gateCloseDelay)) { 
+      if (distance >= 20 && !irDetected) { 
+        closeGate(); 
+      } 
+    } 
+  } 
+   
+  // Update LCD jika tidak dalam mode manual
+  if (!manualMode) { 
+updateLCD(); 
+} 
+// Debug ke Serial Monitor 
+Serial.print("Sensors: "); 
+Serial.print(sensorsEnabled ? "ON" : "OFF"); 
+Serial.print(" | Distance: "); 
+Serial.print(distance); 
+Serial.print(" cm | IR: "); 
+Serial.print(irDetected ? "Detected" : "Clear"); 
+Serial.print(" | Gate: "); 
+Serial.println(gateOpen ? "Open" : "Closed"); 
+delay(100); 
+} 
+int readUltrasonicSensor() { 
+digitalWrite(trigPin, LOW); 
+delayMicroseconds(2); 
+digitalWrite(trigPin, HIGH); 
+delayMicroseconds(10); 
+digitalWrite(trigPin, LOW);
+duration = pulseIn(echoPin, HIGH); 
+int dist = duration * 0.034 / 2;
+if (dist > 400 || dist < 2) { 
+return 999;  
+
+} 
+return dist; 
+} 
+void openGate() { 
+if (!gateOpen) { 
+lcd.clear(); 
+lcd.print("MEMBUKA PALANG"); 
+lcd.setCursor(0, 1); 
+lcd.print("Silakan Masuk.."); 
+for (int pos = 0; pos <= 90; pos += 5) { 
+servoMotor.write(pos); 
+delay(50); 
+} 
+gateOpen = true; 
+digitalWrite(ledRed, LOW); 
+digitalWrite(ledGreen, HIGH); 
+tone(buzzer, 1000, 300); 
+delay(400); 
+tone(buzzer, 1200, 300);
+Serial.println("Palang dibuka!"); 
+} 
+}
+void closeGate() { 
+if (gateOpen) { 
+lcd.clear(); 
